@@ -1,7 +1,3 @@
-/* Digital Trundle Wheel
-   takes input from a 6 cycle (4 positions per cycle) quadrature encoder
-*/
-
 // include encoder library
 #include <Encoder.h>
 #include <Servo.h>    //include the servo library

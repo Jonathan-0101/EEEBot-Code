@@ -52,6 +52,10 @@ void loop() {
   Serial.print("Distance (inch): ");
   Serial.println(distanceInch);
   if (distanceCm < 30){
+    if (distanceCm <= 10)
+    {
+
+    }
     if (distanceCm < 5){
       digitalWrite (ledPin, HIGH);
     }
@@ -63,6 +67,5 @@ void loop() {
       delay(blinkRate);
     }
   }
-  
   delay(50);
 }
