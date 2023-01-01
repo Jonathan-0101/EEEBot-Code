@@ -94,8 +94,6 @@ void loop()
   if (distanceLeft > 1000)
   {
     stopMotors();
-    delay(100);
-    stopMotors();
     exit(1);
   }
 }
