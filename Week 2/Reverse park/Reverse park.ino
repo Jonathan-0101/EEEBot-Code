@@ -3,7 +3,7 @@
 
 #define SOUND_SPEED 0.034
 #define CM_TO_INCH 0.393701
-#define I2C_SLAVE_ADDR 0x04  // 4 in hexadecimal
+#define I2C_SLAVE_ADDR 0x04 // 4 in hexadecimal
 
 MPU6050 mpu6050(Wire);
 
@@ -17,16 +17,18 @@ int leftSpeed;
 int rightSpeed;
 int steeringAngle;
 
-void setup() {
+void setup()
+{
   Wire.begin();
   Serial.begin(9600);
   mpu6050.begin();
   mpu6050.setGyroOffsets(0, 0, 0);
-  pinMode(trigPin, OUTPUT);  // Sets the trigPin as an Output
-  pinMode(echoPin, INPUT);   // Sets the echoPin as an Input
+  pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
+  pinMode(echoPin, INPUT);  // Sets the echoPin as an Input
 }
 
-void drive(int leftMotor, int rightMotor, int angle) {
+void drive(int leftMotor, int rightMotor, int angle)
+{
 
   Wire.beginTransmission(I2C_SLAVE_ADDR);
 
@@ -40,15 +42,17 @@ void drive(int leftMotor, int rightMotor, int angle) {
   Wire.write((byte)(angle & 0x000000FF));
 
   Wire.endTransmission();
-  delay(100);
+  delay(10);
 }
 
-void loop() {
+void loop()
+{
+  // Setting the variables for the car to drive forward for 1 second
   leftSpeed = 150;
   rightSpeed = 150;
   steeringAngle = 107;
+  // Calling the drive function
   drive(leftSpeed, rightSpeed, steeringAngle);
-  Wire.endTransmission();
   delay(1000);
   // make the car turn around 180 degrees
   leftSpeed = 150;
@@ -57,16 +61,15 @@ void loop() {
   drive(leftSpeed, rightSpeed, steeringAngle);
   // check the car has rotated 180 degrees usig the gyroscope
   mpu6050.update();
-  while (mpu6050.getAngleZ() < 180) {
+  while (mpu6050.getAngleZ() < 180)
+  {
     mpu6050.update();
-    delay(100);
     Serial.println(mpu6050.getAngleZ());
   }
   leftSpeed = -120;
   rightSpeed = -120;
   steeringAngle = 107;
   drive(leftSpeed, rightSpeed, steeringAngle);
-  delay(10);
   // stop the car after it is 10 cm from the wall using the ultrasonic sensor
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
@@ -75,7 +78,9 @@ void loop() {
   digitalWrite(trigPin, LOW);
   duration = pulseIn(echoPin, HIGH);
   distanceCm = duration * SOUND_SPEED / 2;
-  while (distanceCm > 10) {
+  // while statemtnt to check the distance from the wall
+  while (distanceCm > 10)
+  {
     digitalWrite(trigPin, LOW);
     delayMicroseconds(2);
     digitalWrite(trigPin, HIGH);
@@ -83,7 +88,6 @@ void loop() {
     digitalWrite(trigPin, LOW);
     duration = pulseIn(echoPin, HIGH);
     distanceCm = duration * SOUND_SPEED / 2;
-    delay(100);
   }
   // make the car turn 90 degrees to the right
   leftSpeed = 120;
@@ -93,7 +97,8 @@ void loop() {
 
   // check the car has rotated 90 degrees usig the gyroscope
   mpu6050.update();
-  while (mpu6050.getAngleZ() > 90) {
+  while (mpu6050.getAngleZ() > 90)
+  {
     mpu6050.update();
     delay(100);
     Serial.println(mpu6050.getAngleZ());
@@ -112,7 +117,8 @@ void loop() {
   digitalWrite(trigPin, LOW);
   duration = pulseIn(echoPin, HIGH);
   distanceCm = duration * SOUND_SPEED / 2;
-  while (distanceCm > 10) {
+  while (distanceCm > 10)
+  {
     digitalWrite(trigPin, LOW);
     delayMicroseconds(2);
     digitalWrite(trigPin, HIGH);
@@ -120,7 +126,6 @@ void loop() {
     digitalWrite(trigPin, LOW);
     duration = pulseIn(echoPin, HIGH);
     distanceCm = duration * SOUND_SPEED / 2;
-    delay(100);
   }
   // stop the car
   leftSpeed = 0;
