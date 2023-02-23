@@ -5,25 +5,39 @@
 #include <MPU6050_tockn.h>
 #include <iostream>
 #include <string>
+#include <Adafruit_NeoPixel.h>
 
 using namespace std;
 #define FALSE = 0
 #define TRUE = !FALSE
 #define SOUND_SPEED 0.034
 #define CM_TO_INCH 0.393701
-#define I2C_SLAVE_ADDR 0x04 // 4 in hexadecimal
+#define I2C_SLAVE_ADDR 0x04
+#define leftPixelStripPin 17
+#define rightPixelStripPin 25
+#define NUM_PIXELS 8
 
+Adafruit_NeoPixel leftPixelStrip(NUM_PIXELS, leftPixelStripPin, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel rightPixelStrip(NUM_PIXELS, rightPixelStripPin, NEO_GRB + NEO_KHZ800);
 MPU6050 mpu6050(Wire);
+#define reverseLights 23
+#define leftIndicators 19
+#define rightIndicators 33
+#define trigPin 5
+#define echoPin 18
 
-const int trigPin = 5;
-const int echoPin = 18;
-long duration;
-float distanceCm;
-long timer = 0;
-int leftSpeed;
-int rightSpeed;
-int steeringAngle;
+// Defining variables
 int data[3];
+int leftSpeed;
+long duration;
+long timer = 0;
+int rightSpeed;
+float distanceCm;
+int steeringAngle;
+float temperature = 0;
+int allLightsCheck = 0;
+int leftIndicatorsCheck = 0;
+int rightIndicatorsCheck = 0;
 
 // Network credentials
 const char *ssid = "tonyTable";
@@ -37,13 +51,6 @@ PubSubClient client(espClient);
 long lastMsg = 0;
 char msg[50];
 int value = 0;
-
-float temperature = 0;
-
-// LED pins
-const int reverseLights = 23;
-const int leftIndicators = 19;
-const int rightIndicators = 33;
 
 // Setting up the script
 void setup()
@@ -59,7 +66,23 @@ void setup()
   pinMode(reverseLights, OUTPUT);
   pinMode(leftIndicators, OUTPUT);
   pinMode(rightIndicators, OUTPUT);
+  leftPixelStrip.begin();
+  rightPixelStrip.begin();
   Wire.begin();
+}
+
+// Drive function
+void drive(int leftMotor, int rightMotor, int angle)
+{
+  Wire.beginTransmission(I2C_SLAVE_ADDR);
+  Wire.write((byte)((leftMotor & 0x0000FF00) >> 8));
+  Wire.write((byte)(leftMotor & 0x000000FF));
+  Wire.write((byte)((rightMotor & 0x0000FF00) >> 8));
+  Wire.write((byte)(rightMotor & 0x000000FF));
+  Wire.write((byte)((angle & 0x0000FF00) >> 8));
+  Wire.write((byte)(angle & 0x000000FF));
+  Wire.endTransmission();
+  delay(10);
 }
 
 // WiFi connection setup
@@ -109,6 +132,11 @@ void callback(char *topic, byte *message, unsigned int length)
       digitalWrite(reverseLights, HIGH);
       digitalWrite(leftIndicators, HIGH);
       digitalWrite(rightIndicators, HIGH);
+      allLightsCheck = 1;
+      leftPixelStrip.fill(leftPixelStrip.Color(255, 50, 0));
+      rightPixelStrip.fill(rightPixelStrip.Color(255, 50, 0));
+      leftPixelStrip.show();
+      rightPixelStrip.show();
     }
     else if (messageTemp == "false")
     {
@@ -116,6 +144,8 @@ void callback(char *topic, byte *message, unsigned int length)
       digitalWrite(reverseLights, LOW);
       digitalWrite(leftIndicators, LOW);
       digitalWrite(rightIndicators, LOW);
+      leftPixelStrip.clear();
+      rightPixelStrip.clear();
     }
   }
 
@@ -127,11 +157,14 @@ void callback(char *topic, byte *message, unsigned int length)
     {
       Serial.println("on");
       digitalWrite(leftIndicators, HIGH);
+      leftIndicatorsCheck = 1;
     }
     else if (messageTemp == "false")
     {
       Serial.println("off");
       digitalWrite(leftIndicators, LOW);
+      leftIndicatorsCheck = 0;
+      leftIndicators.clear();
     }
   }
 
@@ -143,11 +176,14 @@ void callback(char *topic, byte *message, unsigned int length)
     {
       Serial.println("on");
       digitalWrite(rightIndicators, HIGH);
+      rightIndicatorsCheck = 1;
     }
     else if (messageTemp == "false")
     {
       Serial.println("off");
       digitalWrite(rightIndicators, LOW);
+      rightIndicatorsCheck = 0;
+      rightIndicators.clear();
     }
   }
 
@@ -172,28 +208,14 @@ void callback(char *topic, byte *message, unsigned int length)
   {
     leftSpeed = messageTemp.toInt();
     rightSpeed = messageTemp.toInt();
-    Wire.beginTransmission(I2C_SLAVE_ADDR);
-    Wire.write((byte)((leftSpeed & 0x0000FF00) >> 8));
-    Wire.write((byte)(leftSpeed & 0x000000FF));
-    Wire.write((byte)((rightSpeed & 0x0000FF00) >> 8));
-    Wire.write((byte)(rightSpeed & 0x000000FF));
-    Wire.write((byte)((steeringAngle & 0x0000FF00) >> 8));
-    Wire.write((byte)(steeringAngle & 0x000000FF));
-    Wire.endTransmission();
+    drive(leftSpeed, rightSpeed, steeringAngle);
   }
 
   // Setting the steering angle of the car
   if (String(topic) == "esp32/steeringAngle")
   {
     steeringAngle = messageTemp.toInt();
-    Wire.beginTransmission(I2C_SLAVE_ADDR);
-    Wire.write((byte)((leftSpeed & 0x0000FF00) >> 8));
-    Wire.write((byte)(leftSpeed & 0x000000FF));
-    Wire.write((byte)((rightSpeed & 0x0000FF00) >> 8));
-    Wire.write((byte)(rightSpeed & 0x000000FF));
-    Wire.write((byte)((steeringAngle & 0x0000FF00) >> 8));
-    Wire.write((byte)(steeringAngle & 0x000000FF));
-    Wire.endTransmission();
+    drive(leftSpeed, rightSpeed, steeringAngle);
   }
 }
 
@@ -235,6 +257,7 @@ void reconnect()
   }
 }
 
+// Main loop
 void loop()
 {
   if (!client.connected())
@@ -254,5 +277,24 @@ void loop()
     Serial.println(tempString);
     // Sending the temperature to the MQTT server
     client.publish("esp32/temperature", tempString);
+  }
+  // Checking if the indicators should be running
+  if (leftIndicatorsCheck == 1)
+  {
+    for (int pixel = 0; pixel < NUM_PIXELS; pixel++)
+    {
+      leftPixelStrip.setPixelColor(pixel, leftPixelStrip.Color(255, 50, 0));
+      leftPixelStrip.show();
+      delay(150);
+    }
+  }
+  if (rightIndicatorsCheck == 1)
+  {
+    for (int pixel = 0; pixel < NUM_PIXELS; pixel++)
+    {
+      rightPixelStrip.setPixelColor(pixel, rightPixelStrip.Color(255, 50, 0));
+      rightPixelStrip.show();
+      delay(150);
+    }
   }
 }
