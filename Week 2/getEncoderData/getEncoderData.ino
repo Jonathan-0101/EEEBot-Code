@@ -1,21 +1,9 @@
 #include <Wire.h>
-#include <MPU6050_tockn.h>
 
-#define SOUND_SPEED 0.034
-#define CM_TO_INCH 0.393701
 #define I2C_SLAVE_ADDR 0x04 // 4 in hexadecimal
 
 MPU6050 mpu6050(Wire);
 
-long duration;
-float distanceCm;
-int reverseLights = 23;
-int echoPin = 18;
-int trigPin = 5;
-long timer = 0;
-int leftSpeed;
-int rightSpeed;
-int steeringAngle;
 long receivedValue1;
 long receivedValue2;
 byte receivedByte1;
@@ -25,10 +13,6 @@ void setup()
 {
     Wire.begin();
     Serial.begin(9600);
-    mpu6050.begin();
-    mpu6050.setGyroOffsets(0, 0, 0);
-    pinMode(trigPin, OUTPUT); // Sets the trigPin as an Output
-    pinMode(echoPin, INPUT);  // Sets the echoPin as an Input
 }
 
 void loop()

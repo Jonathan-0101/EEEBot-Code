@@ -7,12 +7,13 @@
 
 MPU6050 mpu6050(Wire);
 
+#define trigPin 5
+#define echoPin 18
+#define reverseLights 23
+
+long timer = 0;
 long duration;
 float distanceCm;
-int reverseLights = 23;
-int echoPin = 18;
-int trigPin = 5;
-long timer = 0;
 int leftSpeed;
 int rightSpeed;
 int steeringAngle;

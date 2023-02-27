@@ -1,18 +1,6 @@
-/*********
-  Rui Santos
-  Complete project details at https://RandomNerdTutorials.com/esp32-hc-sr04-ultrasonic-arduino/
+#define trigPin 5
+#define echoPin 18
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files.
-
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
-*********/
-
-const int trigPin = 5;
-const int echoPin = 18;
-
-// define sound speed in cm/uS
 #define SOUND_SPEED 0.034
 #define CM_TO_INCH 0.393701
 
@@ -55,9 +43,6 @@ void loop()
   Serial.println(distanceInch);
   if (distanceCm < 30)
   {
-    if (distanceCm <= 10)
-    {
-    }
     if (distanceCm < 5)
     {
       digitalWrite(ledPin, HIGH);
