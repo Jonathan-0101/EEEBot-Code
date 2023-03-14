@@ -1,14 +1,14 @@
 #include <stdio.h>
-#include "opencv_aee.hpp"
+
 #include "main.hpp"
+#include "opencv_aee.hpp"
 #include "pi2c.h"
 
 // Initialize a Pi2c object on I2C bus 4
 Pi2c car(4);
 
 // Function to send motor speeds and steering angle to the car
-void drive(int leftMotor, int rightMotor, int steerAngle)
-{
+void drive(int leftMotor, int rightMotor, int steerAngle) {
     char dataToSend[6];
     dataToSend[0] = (char)((leftMotor >> 8) & 0xFF);
     dataToSend[1] = (char)(leftMotor & 0xFF);
@@ -20,8 +20,7 @@ void drive(int leftMotor, int rightMotor, int steerAngle)
     car.i2cWrite(dataToSend, 6);
 }
 
-void checkData(int setPoint, int *leftMotorSpeed, int *rightMotorSpeed, int *steeringAngle)
-{
+void checkData(int setPoint, int *leftMotorSpeed, int *rightMotorSpeed, int *steeringAngle) {
     // Constrain the steering angle to +- 40 degrees from the set point
     *steeringAngle = max(setPoint - 50, min(setPoint + 50, *steeringAngle));
 
@@ -30,14 +29,12 @@ void checkData(int setPoint, int *leftMotorSpeed, int *rightMotorSpeed, int *ste
     *rightMotorSpeed = max(-255, min(255, *rightMotorSpeed));
 }
 
-void setup(void)
-{
+void setup(void) {
     // Initialize the camera
     setupCamera(320, 240);
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
     setup();
     cv::namedWindow("Photo");
 
@@ -58,15 +55,13 @@ int main(int argc, char **argv)
     int leftMotorSpeed;
     int rightMotorSpeed;
 
-    while (1)
-    {
+    while (1) {
         Mat frame;
         Mat image_HSV;
         Mat image_GREY;
 
         // Capture a frame from the camera
-        while (frame.empty())
-        {
+        while (frame.empty()) {
             frame = captureFrame();
         }
 
@@ -92,46 +87,36 @@ int main(int argc, char **argv)
         drawContours(frame, contours, -1, Scalar(0, 255, 0), 2);
 
         // Check that there is at least one contour
-        if (contours.size() > 0)
-        {
+        if (contours.size() > 0) {
             // Find the moments of the contours
             std::vector<Moments> mu(contours.size());
-            for (int i = 0; i < contours.size(); i++)
-            {
+            for (int i = 0; i < contours.size(); i++) {
                 mu[i] = moments(contours[i], false);
             }
             // Check that there is at least one item in the mu vector
-            if (mu.size() > 0)
-            {
+            if (mu.size() > 0) {
                 // Find the centroid of the contours
                 std::vector<Point2f> mc(contours.size());
-                for (int i = 0; i < contours.size(); i++)
-                {
+                for (int i = 0; i < contours.size(); i++) {
                     mc[i] = Point2f(mu[i].m10 / mu[i].m00, mu[i].m01 / mu[i].m00);
                 }
                 // Check that there is at least one item in the mc vector
-                if (mc.size() > 0)
-                {
+                if (mc.size() > 0) {
                     // Draw the centroid of the contours
-                    for (int i = 0; i < contours.size(); i++)
-                    {
+                    for (int i = 0; i < contours.size(); i++) {
                         circle(frame, mc[i], 4, Scalar(255, 0, 0), -1, 8, 0);
                     }
                     // check that there is at least one contour
-                    if (contours.size() > 0)
-                    {
+                    if (contours.size() > 0) {
                         // Find the largest contour
                         int largestContour = 0;
-                        for (int i = 0; i < contours.size(); i++)
-                        {
-                            if (contourArea(contours[i]) > contourArea(contours[largestContour]))
-                            {
+                        for (int i = 0; i < contours.size(); i++) {
+                            if (contourArea(contours[i]) > contourArea(contours[largestContour])) {
                                 largestContour = i;
                             }
                         }
                         // Check that there is at least one item in the mc vector
-                        if (mc.size() > 0)
-                        {
+                        if (mc.size() > 0) {
                             // Calulate the distance from the centre of the image to the centre of the largest contour
                             int xDistance = mc[largestContour].x - (frame.cols / 2);
                             int yDistance = mc[largestContour].y - (frame.rows / 2);
@@ -188,8 +173,7 @@ int main(int argc, char **argv)
 
         // If the key is ESC, break out of the loop
         key = (key == 255) ? -1 : key;
-        if (key == 27)
-        {
+        if (key == 27) {
             drive(0, 0, 107);
             break;
         }

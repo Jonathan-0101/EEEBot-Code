@@ -28,7 +28,7 @@ int main(int argc, char **argv)
         cvtColor(frame, image_hsv, COLOR_BGR2HSV);
         // convert the image to black and white using the inRange function for pink pixels
         Mat symbol_check;
-        inRange(image_hsv, Scalar(150, 50, 50), Scalar(170, 255, 255), symbol_check);
+        inRange(image_hsv, Scalar(150, 50, 50), Scalar(180, 255, 255), symbol_check);
 
         // find the contours of the image saving them as img_symbol_contours
         std::vector<std::vector<Point>> img_symbol_contours;
