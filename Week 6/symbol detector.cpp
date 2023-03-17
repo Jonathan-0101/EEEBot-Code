@@ -1,25 +1,24 @@
 // Include files for required libraries
 #include <stdio.h>
-#include "opencv_aee.hpp"
-#include "main.hpp"
 
-void setup(void)
-{
-    setupCamera(320, 240); // Enable the camera for OpenCV
+#include "main.hpp"
+#include "opencv_aee.hpp"
+
+void setup(void) {
+    setupCamera(320, 240);  // Enable the camera for OpenCV
 }
 
-int main(int argc, char **argv)
-{
-    setup(); // Call a setup function to prepare IO and devices
+int main(int argc, char **argv) {
+    setup();  // Call a setup function to prepare IO and devices
 
-    cv::namedWindow("Photo"); // Create a GUI window called photo
+    cv::namedWindow("Photo");  // Create a GUI window called photo
 
-    while (1) // Main loop to perform image processing
+    while (1)  // Main loop to perform image processing
     {
         Mat frame;
 
         while (frame.empty())
-            frame = captureFrame(); // Capture a frame from the camera and store in a new matrix variable
+            frame = captureFrame();  // Capture a frame from the camera and store in a new matrix variable
 
         rotate(frame, frame, ROTATE_180);
 
@@ -39,18 +38,14 @@ int main(int argc, char **argv)
 
         // transform the perspective of the image
         std::vector<Point2f> corners;
-        for (int i = 0; i < img_symbol_contours.size(); i++)
-        {
-            if (img_symbol_contours[i].size() > 4)
-            {
+        for (int i = 0; i < img_symbol_contours.size(); i++) {
+            if (img_symbol_contours[i].size() > 4) {
                 approxPolyDP(img_symbol_contours[i], corners, arcLength(img_symbol_contours[i], true) * 0.02, true);
-                if (corners.size() == 4)
-                {
+                if (corners.size() == 4) {
                     // draw the contours
                     drawContours(frame, img_symbol_contours, i, Scalar(0, 255, 0), 2);
                     // draw the corners
-                    for (int j = 0; j < corners.size(); j++)
-                    {
+                    for (int j = 0; j < corners.size(); j++) {
                         circle(frame, corners[j], 5, Scalar(0, 0, 255), 2);
                     }
                 }
@@ -58,8 +53,7 @@ int main(int argc, char **argv)
         }
 
         // check nif there are 4 corners
-        if (corners.size() == 4)
-        {
+        if (corners.size() == 4) {
             // change the perspective of symbol_check so that the 4 corners found are the new corners
             Mat perspective_transform = getPerspectiveTransform(corners, std::vector<Point2f>{Point2f(0, 0), Point2f(0, 100), Point2f(100, 100), Point2f(100, 0)});
             warpPerspective(symbol_check, symbol_check, perspective_transform, Size(100, 100));
@@ -91,8 +85,7 @@ int main(int argc, char **argv)
 
             int similarity[13];
 
-            for (int i = 0; i < 13; i++)
-            {
+            for (int i = 0; i < 13; i++) {
                 // convert the symbols to hsv and black and white
                 cvtColor(symbols[i], symbols[i], COLOR_BGR2HSV);
                 inRange(symbols[i], Scalar(150, 50, 50), Scalar(180, 255, 255), symbols[i]);
@@ -116,40 +109,37 @@ int main(int argc, char **argv)
             // find which symbol has the most similar pixels
             int max = 0;
             int max_index = 0;
-            for (int i = 0; i < 13; i++)
-            {
-                if (similarity[i] > max)
-                {
+            for (int i = 0; i < 13; i++) {
+                if (similarity[i] > max) {
                     max = similarity[i];
                     max_index = i;
                 }
             }
             // check if the percentage is above 75%
-            if (max > 75)
-            {
+            if (max > 75) {
                 // display the name of the symbol that is most similar on the frame
                 putText(frame, symbol_names[max_index], Point(0, 50), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
-            }
-            else
-            {
+            } else {
                 // display "Unknown" on the frame
                 putText(frame, "Unknown", Point(0, 50), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
             }
+        } else {
+            // display "Unknown" on the frame
+            putText(frame, "Unknown", Point(0, 50), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
         }
-
-        cv::imshow("Photo", frame); // Display the image in the window
+        cv::imshow("Photo", frame);  // Display the image in the window
         // show all the images
         imshow("HSV", image_hsv);
         imshow("Black and White", symbol_check);
 
-        int key = cv::waitKey(1); // Wait 1ms for a keypress (required to update windows)
+        int key = cv::waitKey(1);  // Wait 1ms for a keypress (required to update windows)
 
-        key = (key == 255) ? -1 : key; // Check if the ESC key has been pressed
+        key = (key == 255) ? -1 : key;  // Check if the ESC key has been pressed
         if (key == 27)
             break;
     }
 
-    closeCV(); // Disable the camera and close any windows
+    closeCV();  // Disable the camera and close any windows
 
     return 0;
 }
