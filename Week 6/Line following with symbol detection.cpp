@@ -1,9 +1,14 @@
 // Include files for required libraries
 #include <stdio.h>
 
+#include <ctime>
+#include <iostream>
+
 #include "main.hpp"
 #include "opencv_aee.hpp"
 #include "pi2c.h"
+
+using namespace std;
 
 // Initialize a Pi2c object on I2C bus 4
 Pi2c car(4);
@@ -16,8 +21,6 @@ int lineToFollow = 0;
 
 // Function to send motor speeds and steering angle to the car
 void drive(int leftMotor, int rightMotor, int steerAngle) {
-    // Print "You have reached the drive function"
-    printf("You have reached the drive function");
     char dataToSend[6];
     dataToSend[0] = (char)((leftMotor >> 8) & 0xFF);
     dataToSend[1] = (char)(leftMotor & 0xFF);
@@ -30,8 +33,6 @@ void drive(int leftMotor, int rightMotor, int steerAngle) {
 }
 
 void checkData(int setPoint, int *leftMotorSpeed, int *rightMotorSpeed, int *steeringAngle) {
-    // Print "You have reached the check data function"
-    printf("You have reached the check data function");
     // Constrain the steering angle to +- 40 degrees from the set point
     *steeringAngle = max(setPoint - 50, min(setPoint + 50, *steeringAngle));
 
@@ -47,7 +48,7 @@ int symbolDetection(Mat frame) {
     cvtColor(frame_symbol, image_hsv, COLOR_BGR2HSV);
     // Convert the image to black and white using the inRange function for pink pixels
     Mat symbol_check;
-    inRange(image_hsv, Scalar(120, 40, 70), Scalar(180, 188, 165), symbol_check);
+    inRange(image_hsv, Scalar(118, 38, 58), Scalar(172, 187, 117), symbol_check);
 
     // Clear up the image
     dilate(symbol_check, symbol_check, getStructuringElement(MORPH_ELLIPSE, Size(7.5, 7.5)));
@@ -145,7 +146,6 @@ int symbolDetection(Mat frame) {
             putText(frame_symbol, symbol_names[max_index], Point(0, 50), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
             // Show all the images
             imshow("frame_symbol", frame_symbol);
-            imshow("Black and White", symbol_check);
             if (symbol_names[max_index] == "Circle") {
                 return 1;
             } else if (symbol_names[max_index] == "Star") {
@@ -162,7 +162,6 @@ int symbolDetection(Mat frame) {
             putText(frame_symbol, "Unknown", Point(0, 50), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
             // Show all the images
             imshow("frame_symbol", frame_symbol);
-            imshow("Black and White", symbol_check);
             return 0;
         }
     } else {
@@ -170,7 +169,6 @@ int symbolDetection(Mat frame) {
         putText(frame_symbol, "Unknown", Point(0, 50), FONT_HERSHEY_SIMPLEX, 1, Scalar(0, 0, 255), 2);
         // Show all the images
         imshow("frame_symbol", frame_symbol);
-        imshow("Black and White", symbol_check);
         return 0;
     }
     return 0;
@@ -185,17 +183,14 @@ int main(int argc, char **argv) {
     // Call a setup function to prepare IO and devices
     setup();
 
-    // Create a GUI window called photo
-    cv::namedWindow("Photo");
-
     // Initialize the PID variables
     float P;
     float I;
     float D;
     float u;
-    float Kp = 7.5;
-    float Ki = 0.000005;
-    float Kd = 0.25;
+    float Kp = 3.5;
+    float Ki = 0.05;
+    float Kd = 0.025;
     float K = 0.0009375;
     int setPoint = 107;
     float speedModifier = 1;
@@ -205,6 +200,10 @@ int main(int argc, char **argv) {
     int steeringAngle;
     int leftMotorSpeed;
     int rightMotorSpeed;
+
+    time_t lastTime = time(NULL);
+    time_t currentTime;
+    int timeDifference;
 
     // Main loop to perform image processing
     while (1) {
@@ -239,22 +238,30 @@ int main(int argc, char **argv) {
             case 1:
                 // Print "Red" on the console
                 std::cout << "Red" << std::endl;
-                inRange(image_hsv, Scalar(0, 130, 90), Scalar(180, 255, 255), image_threshold);
+                inRange(image_hsv, Scalar(130, 130, 90), Scalar(180, 255, 255), image_threshold);
+                I = 0;
+                D = 0;
                 break;
             case 2:
                 // Print "Green" on the console
                 std::cout << "Green" << std::endl;
-                inRange(image_hsv, Scalar(60, 65, 0), Scalar(90, 255, 255), image_threshold);
+                inRange(image_hsv, Scalar(50, 60, 50), Scalar(90, 255, 255), image_threshold);
+                I = 0;
+                D = 0;
                 break;
             case 3:
                 // Print "Blue" on the console
                 std::cout << "Blue" << std::endl;
-                inRange(image_hsv, Scalar(80, 75, 0), Scalar(140, 255, 255), image_threshold);
+                inRange(image_hsv, Scalar(90, 70, 50), Scalar(140, 255, 155), image_threshold);
+                I = 0;
+                D = 0;
                 break;
             case 4:
                 // Print "Yellow" on the console
                 std::cout << "Yellow" << std::endl;
                 inRange(image_hsv, Scalar(0, 105, 125), Scalar(30, 255, 255), image_threshold);
+                I = 0;
+                D = 0;
                 break;
             default:
                 // Print "Black" on the conso le
@@ -266,10 +273,12 @@ int main(int argc, char **argv) {
         // Check if image_threshold has any white pixels
         if (countNonZero(image_threshold) < 5) {
             // Print "No line detected" on the console
-            std::cout << "No line detected" << std::endl;
+            cout << "No line detected" << endl;
             symbolDetected = 0;
             checkForSymbols = 1;
             inRange(image_hsv, Scalar(0, 0, 0), Scalar(180, 255, 50), image_threshold);
+            I = 0;
+            D = 0;
         }
 
         imshow("Black and White follow", image_threshold);
@@ -347,8 +356,8 @@ int main(int argc, char **argv) {
                             printf("P: %f, I: %f, D: %f, U: %f \n", P, I, D, u);
 
                             // Using value of u to set motor speeds
-                            leftMotorSpeed = 80 + K * u * speedModifier;
-                            rightMotorSpeed = 80 - K * u * speedModifier;
+                            leftMotorSpeed = 90 + K * u * speedModifier;
+                            rightMotorSpeed = 90 - K * u * speedModifier;
                             steeringAngle = setPoint + u;
 
                             // Print the values to the console
@@ -375,9 +384,6 @@ int main(int argc, char **argv) {
                 }
             }
         }
-
-        // Display the image in the window
-        cv::imshow("Photo", frame);
 
         // Wait 1ms for a keypress (required to update windows)
         int key = cv::waitKey(1);
