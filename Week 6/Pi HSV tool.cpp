@@ -12,10 +12,10 @@ int main(int argc, char **argv) {
     setup();                    // Call a setup function to prepare IO and devices
     namedWindow("HSV Tester");  // Create a GUI window called photo
 
-    int lowH = 0, highH = 179, lowS = 0, highS = 255, lowV = 0, highV = 255;  // Initialise some variables for HSV limits
+    int lowH = 0, highH = 180, lowS = 0, highS = 255, lowV = 0, highV = 255;  // Initialise some variables for HSV limits
 
-    createTrackbar("Low Hue", "HSV Tester", &lowH, 179, NULL);  // Create trackbar controls for each HSV limit
-    createTrackbar("High Hue", "HSV Tester", &highH, 179, NULL);
+    createTrackbar("Low Hue", "HSV Tester", &lowH, 180, NULL);  // Create trackbar controls for each HSV limit
+    createTrackbar("High Hue", "HSV Tester", &highH, 180, NULL);
 
     createTrackbar("Low Sat", "HSV Tester", &lowS, 255, NULL);
     createTrackbar("High Sat", "HSV Tester", &highS, 255, NULL);

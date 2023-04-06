@@ -79,6 +79,7 @@ int symbolDetection(Mat frame) {
 
     // Check if there are 4 corners
     if (corners.size() == 4) {
+        drive(0, 0, 107);
         // Change the perspective of symbol_check so that the 4 corners found are the new corners
         Mat perspective_transform = getPerspectiveTransform(corners, std::vector<Point2f>{Point2f(0, 0), Point2f(0, 100), Point2f(100, 100), Point2f(100, 0)});
         warpPerspective(symbol_check, symbol_check, perspective_transform, Size(100, 100));
