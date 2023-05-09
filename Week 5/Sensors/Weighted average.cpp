@@ -43,23 +43,22 @@ int main(int argc, char **argv) {
 
         rotate(frame, frame, ROTATE_180);
 
+        // Convert the image to HSV and then to greyscale
         cvtColor(frame, image_HSV, COLOR_BGR2HSV);
         inRange(image_HSV, Scalar(0, 0, 0), Scalar(255, 255, 80), image_GREY);
 
+        // Find the contours in the image
         std::vector<std::vector<Point>> contours;
         std::vector<Vec4i> hierarchy;
         findContours(image_GREY, contours, hierarchy, RETR_TREE, CHAIN_APPROX_TC89_L1);
-
         drawContours(frame, contours, -1, Scalar(0, 255, 0), 2);
 
-        // Keep only the bottom section of the image
+                // Crop the image so only the bottom 1/3 remains
         int thirdHeight = image_GREY.rows / 3;
         image_GREY = image_GREY(Rect(0, image_GREY.rows * 2 / 3, image_GREY.cols, thirdHeight));
-
+        // Split the image into sections
         int numberOfSections = 40;
         int pixelCount[numberOfSections];
-
-        // Split the image into sections
         int sectionWidth = image_GREY.cols / numberOfSections;
 
         // Loop through each section counting the number of black pixels

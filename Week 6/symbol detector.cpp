@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
         // draw the contours
         drawContours(frame, img_symbol_contours, -1, Scalar(0, 0, 255), 2);
 
-        // transform the perspective of the image
+        // find the outermost corners of the symbol
         std::vector<Point2f> corners;
         for (int i = 0; i < img_symbol_contours.size(); i++) {
             if (img_symbol_contours[i].size() > 4) {
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        // check nif there are 4 corners
+        // check if there are 4 corners
         if (corners.size() == 4) {
             // change the perspective of symbol_check so that the 4 corners found are the new corners
             Mat perspective_transform = getPerspectiveTransform(corners, std::vector<Point2f>{Point2f(0, 0), Point2f(0, 100), Point2f(100, 100), Point2f(100, 0)});
@@ -89,13 +89,6 @@ int main(int argc, char **argv) {
                 // convert the symbols to hsv and black and white
                 cvtColor(symbols[i], symbols[i], COLOR_BGR2HSV);
                 inRange(symbols[i], Scalar(150, 50, 50), Scalar(180, 255, 255), symbols[i]);
-
-                // find the contours of the symbols
-                std::vector<std::vector<Point>> symbol_contours;
-                findContours(symbols[i], symbol_contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-
-                // draw the contours
-                drawContours(symbols[i], symbol_contours, -1, Scalar(255, 255, 255), 2);
 
                 // use compare() to compare symbols[i] and symbol_check
                 Mat result;

@@ -68,11 +68,11 @@ int main(int argc, char **argv) {
         // Rotate the image 180 degrees
         rotate(frame, frame, ROTATE_180);
 
-        // Increase the contrast of the image
-        frame.convertTo(frame, -1, 1.5, 0);
-
         // Crop the image so only the bottom 2/3 remain
         frame = frame(Rect(0, frame.rows / 3, frame.cols, frame.rows / 3 * 2));
+
+        // Increase the contrast of the image
+        frame.convertTo(frame, -1, 1.5, 0);
 
         // Convert the image to HSV and then to greyscale
         cvtColor(frame, image_HSV, COLOR_BGR2HSV);
@@ -106,60 +106,57 @@ int main(int argc, char **argv) {
                     for (int i = 0; i < contours.size(); i++) {
                         circle(frame, mc[i], 4, Scalar(255, 0, 0), -1, 8, 0);
                     }
-                    // check that there is at least one contour
-                    if (contours.size() > 0) {
-                        // Find the largest contour
-                        int largestContour = 0;
-                        for (int i = 0; i < contours.size(); i++) {
-                            if (contourArea(contours[i]) > contourArea(contours[largestContour])) {
-                                largestContour = i;
-                            }
+                    // Find the largest contour
+                    int largestContour = 0;
+                    for (int i = 0; i < contours.size(); i++) {
+                        if (contourArea(contours[i]) > contourArea(contours[largestContour])) {
+                            largestContour = i;
                         }
-                        // Check that there is at least one item in the mc vector
-                        if (mc.size() > 0) {
-                            // Calulate the distance from the centre of the image to the centre of the largest contour
-                            int xDistance = mc[largestContour].x - (frame.cols / 2);
-                            int yDistance = mc[largestContour].y - (frame.rows / 2);
+                    }
+                    // Check that there is at least one item in the mc vector
+                    if (mc.size() > 0) {
+                        // Calulate the distance from the centre of the image to the centre of the largest contour
+                        int xDistance = mc[largestContour].x - (frame.cols / 2);
+                        int yDistance = mc[largestContour].y - (frame.rows / 2);
 
-                            float error = xDistance / 16;
+                        float error = xDistance / 16;
 
-                            // Print the error to the console
-                            printf("Error: %f \n", error);
+                        // Print the error to the console
+                        printf("Error: %f \n", error);
 
-                            // Calculating the PID variables
-                            P = error;
-                            I += error;
-                            D = error - lastError;
-                            lastError = error;
+                        // Calculating the PID variables
+                        P = error;
+                        I += error;
+                        D = error - lastError;
+                        lastError = error;
 
-                            // PID equation
-                            u = (Kp * P) + (Ki * I) + (Kd * D);
+                        // PID equation
+                        u = (Kp * P) + (Ki * I) + (Kd * D);
 
-                            // Print out the values of the PID variables and u
-                            printf("P: %f, I: %f, D: %f, U: %f \n", P, I, D, u);
+                        // Print out the values of the PID variables and u
+                        printf("P: %f, I: %f, D: %f, U: %f \n", P, I, D, u);
 
-                            // Using value of u to set motor speeds
-                            leftMotorSpeed = 100 + K * u;
-                            rightMotorSpeed = 100 - K * u;
-                            steeringAngle = setPoint + u;
+                        // Using value of u to set motor speeds
+                        leftMotorSpeed = 100 + K * u;
+                        rightMotorSpeed = 100 - K * u;
+                        steeringAngle = setPoint + u;
 
-                            // Print the values to the console
-                            printf("Pre U: %f, Steering Angle: %d, Left Motor Speed: %d, Right Motor Speed: %d \n", u, steeringAngle, leftMotorSpeed, rightMotorSpeed);
+                        // Print the values to the console
+                        printf("Pre U: %f, Steering Angle: %d, Left Motor Speed: %d, Right Motor Speed: %d \n", u, steeringAngle, leftMotorSpeed, rightMotorSpeed);
 
-                            // Check the data to make sure it is within the correct range
-                            checkData(setPoint, &leftMotorSpeed, &rightMotorSpeed, &steeringAngle);
+                        // Check the data to make sure it is within the correct range
+                        checkData(setPoint, &leftMotorSpeed, &rightMotorSpeed, &steeringAngle);
 
-                            printf("Post U: %f, Steering Angle: %d, Left Motor Speed: %d, Right Motor Speed: %d \n", u, steeringAngle, leftMotorSpeed, rightMotorSpeed);
+                        printf("Post U: %f, Steering Angle: %d, Left Motor Speed: %d, Right Motor Speed: %d \n", u, steeringAngle, leftMotorSpeed, rightMotorSpeed);
 
-                            // Send the data to the nano
-                            drive(leftMotorSpeed, rightMotorSpeed, steeringAngle);
+                        // Send the data to the nano
+                        drive(leftMotorSpeed, rightMotorSpeed, steeringAngle);
 
-                            // Display the error and steering angle on the image
-                            std::string errorString = "Error: " + std::to_string(error);
-                            std::string steeringAngleString = "Steering Angle: " + std::to_string(steeringAngle);
-                            putText(frame, errorString, Point(10, 20), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 1, 8, false);
-                            putText(frame, steeringAngleString, Point(10, 40), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 1, 8, false);
-                        }
+                        // Display the error and steering angle on the image
+                        std::string errorString = "Error: " + std::to_string(error);
+                        std::string steeringAngleString = "Steering Angle: " + std::to_string(steeringAngle);
+                        putText(frame, errorString, Point(10, 20), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 1, 8, false);
+                        putText(frame, steeringAngleString, Point(10, 40), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0, 0, 255), 1, 8, false);
                     }
                 }
             }
